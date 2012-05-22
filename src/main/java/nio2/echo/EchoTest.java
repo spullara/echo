@@ -4,20 +4,26 @@ import java.io.IOException;
 import java.lang.System;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.sampullara.cli.Args;
+import com.sampullara.cli.Argument;
+
 public class EchoTest {
-  public static final int BUFFER_SIZE = 768;
+
+  @Argument(alias = "c", description = "Use as client")
+  private static Boolean client = false;
+
+  @Argument(alias = "b", description = "Buffer size")
+  private static int buffer = 768;
 
   private static final Logger logger = Logger.getLogger("Proxy");
 
@@ -37,7 +43,7 @@ public class EchoTest {
   private static ByteBuffer getBuffer() {
     ByteBuffer poll = queue.poll();
     if (poll == null) {
-      return ByteBuffer.allocate(BUFFER_SIZE);
+      return ByteBuffer.allocateDirect(buffer);
     }
     return poll;
   }
@@ -77,10 +83,17 @@ public class EchoTest {
   }
 
   public static void main(String[] args) throws IOException, InterruptedException {
+    try {
+      Args.parse(EchoTest.class, args);
+    } catch (IllegalArgumentException e) {
+      Args.usage(EchoTest.class);
+      System.exit(1);
+    }
+
     int port = 63790;
     CountDownLatch done = new CountDownLatch(1);
 
-    if (args.length > 0 && args[0].equals("-c")) {
+    if (client) {
       final AsynchronousSocketChannel client;
       try {
         client = AsynchronousSocketChannel.open();
