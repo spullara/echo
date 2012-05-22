@@ -43,6 +43,7 @@ public class EchoTest {
   }
 
   private static AtomicLong count = new AtomicLong(0);
+  private static AtomicLong bytes = new AtomicLong(0);
   private static long start;
 
   private static void read(final AsynchronousSocketChannel reader, AsynchronousSocketChannel writer) {
@@ -54,11 +55,14 @@ public class EchoTest {
           return;
         }
         long current = count.incrementAndGet();
+        bytes.getAndAdd(result);
         if (current % 100000 == 0) {
           long end = System.currentTimeMillis();
-          long rps = current * 1000 / (end - start);
-          System.out.println("RPS: " + rps);
+          long rps = bytes.longValue() / 768 * 1000 / (end - start);
+          double bps = bytes.doubleValue() * 1000 / (end - start) / 1024 / 1024;
+          System.out.format("RPS: %d MB/s: %2g\n", rps, bps);
           count.set(0);
+          bytes.set(0);
           start = end;
         }
         writer.write((ByteBuffer) buffer.flip(), buffer, new Handler<ByteBuffer>() {
