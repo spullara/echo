@@ -23,7 +23,7 @@ public class EchoTest {
   private static Boolean client = false;
 
   @Argument(alias = "b", description = "Buffer size")
-  private static int buffer = 768;
+  private static Integer buffer = 768;
 
   private static final Logger logger = Logger.getLogger("Proxy");
 
